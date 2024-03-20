@@ -105,6 +105,7 @@ pub async fn subscribe_to_queue(
                                                                             )
                                                                                 .await
                                                                                 .unwrap();
+                                                                        println!("Document Text: {}", document_text);
                                                                         // dynamically get user's chunking strategy of choice from the database
                                                                         let model_obj_clone =
                                                                             model_parameters.clone();

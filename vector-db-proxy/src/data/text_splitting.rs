@@ -119,6 +119,7 @@ impl Chunker {
             // from those sentence hashmaps we extract the text and form a vector of strings which contain each sentence.
             let list_of_text: Vec<String> =
                 sentences.iter().map(|s| s["sentence"].clone()).collect();
+            println!("Text produced {} sentences", list_of_text.len());
 
             // we embed each of those sentences
             let llm = LLM::new();
@@ -129,12 +130,16 @@ impl Chunker {
                 Ok(embeddings) => {
                     // we match the index with the embedding index and insert the embedding vector into the sentence hashmap
                     for (i, sentence) in sentences.iter().enumerate() {
-                        if i < embeddings.len() && !embeddings[i].is_empty() {
-                            vector_of_sentences.push(Sentence {
-                                sentence_embedding: Array1::from_vec(embeddings[i].clone()),
-                                distance_to_next: None,
-                                sentence: Some(sentence["sentence"].clone()),
-                            });
+                        if !embeddings.is_empty() && embeddings.len() > 0 {
+                            if !embeddings[i].is_empty() {
+                                vector_of_sentences.push(Sentence {
+                                    sentence_embedding: Array1::from_vec(embeddings[i].clone()),
+                                    distance_to_next: None,
+                                    sentence: Some(sentence["sentence"].clone()),
+                                });
+                            }
+                        } else {
+                            println!("Embedding is empty!")
                         }
                     }
                     // here is where the divergence occurs depending on the chunking strategy chosen by the use
@@ -240,17 +245,23 @@ impl Chunker {
                 for mut chunk in chunks {
                     let mut metadata = metadata[i].clone().unwrap();
                     if self.add_start_index {
+                        // Use char_indices to work with character boundaries
+                        let text_chars: Vec<(usize, char)> = text.char_indices().collect();
                         index = match index {
-                            Some(idx) => text[idx + 1..]
-                                .find(&chunk.page_content)
-                                .map(|found_idx| found_idx + idx + 1),
-                            None => text.find(&chunk.page_content),
+                            Some(idx) => {
+                                // Find the chunk's start position relative to idx, ensuring we're within character boundaries
+                                text_chars.iter().skip(idx + 1).position(|(_, c)| chunk.page_content.starts_with(*c)).map(|pos| text_chars[idx + 1 + pos].0)
+                            }
+                            None => {
+                                // Find the first occurrence of the chunk.page_content, still ensuring we're within character boundaries
+                                text_chars.iter().find(|(_, c)| chunk.page_content.starts_with(*c)).map(|&(pos, _)| pos)
+                            }
                         };
                         if let Some(idx) = index {
                             metadata.insert("start_index".to_string(), idx.to_string());
                         }
                     }
-                    metadata.insert("document".to_string(), chunk.page_content.to_string());
+                    metadata.insert("page_content".to_string(), chunk.page_content.to_string());
                     chunk.metadata = Some(metadata);
                     documents.push(chunk);
                 }

@@ -44,6 +44,7 @@ pub async fn extract_text_from_file(
     let mut metadata = HashMap::new();
     let path = file_path.trim_matches('"').path().to_string();
     let chunker = TextChunker::default();
+    println!("Attempting to extract text from : {}", file_type);
     match file_type {
         FileType::PDF => {
             let path_clone = path.clone();

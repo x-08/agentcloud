@@ -111,6 +111,7 @@ impl Chunking for TextChunker {
                             let page_dict = doc.get_dictionary(page)?;
                             metadata = self.dictionary_to_hashmap(page_dict);
                             if text.is_empty() {
+                                println!("Text is empty");
                                 return Err(anyhow!(
                                     "Unable to extract text from PDF document: {}",
                                     path
@@ -120,12 +121,17 @@ impl Chunking for TextChunker {
                             res = (text, metadata);
                             Ok(res)
                         }
-                        Err(e) => Err(anyhow!(
+
+                        Err(e) => {
+                            println!("An error occurred while extracting text");
+                            Err(anyhow!(
                             "An error occurred while trying to extract text from pdf. Error: {}",
                             e
-                        )),
+                        ))
+                        }
                     };
                 }
+                println!("Final result from PDF extraction: {:?}", res);
                 Ok(res)
             }
             Err(e) => Err(anyhow!(

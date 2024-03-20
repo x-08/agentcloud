@@ -1,4 +1,6 @@
 use std::collections::HashMap;
+use std::fmt;
+use std::fmt::{Display, Formatter};
 use std::hash::{Hash, Hasher};
 
 #[derive(Debug, Clone, Default)]
@@ -35,6 +37,7 @@ impl Hash for Document {
         self.page_content.hash(state);
     }
 }
+
 #[derive(Copy, Clone)]
 pub enum FileType {
     PDF,
@@ -43,6 +46,7 @@ pub enum FileType {
     DOCX,
     UNKNOWN,
 }
+
 impl From<String> for FileType {
     fn from(value: String) -> Self {
         match value.as_str() {
@@ -51,6 +55,18 @@ impl From<String> for FileType {
             "csv" => Self::CSV,
             "docx" | "pptx" | "xlsx" | "odt" | "ods" | "odp" => Self::DOCX,
             _ => Self::UNKNOWN,
+        }
+    }
+}
+
+impl Display for FileType {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            FileType::CSV => write!(f, "{}", "csv"),
+            FileType::DOCX => write!(f, "{}", "docx"),
+            FileType::PDF => write!(f, "{}", "pdf"),
+            FileType::TXT => write!(f, "{}", "txt"),
+            FileType::UNKNOWN => write!(f, "{}", "unknown")
         }
     }
 }
