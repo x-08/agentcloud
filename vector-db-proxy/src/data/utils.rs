@@ -21,6 +21,7 @@ pub fn cosine_similarity(a: &Array1<f32>, b: &Array1<f32>) -> f32 {
 }
 
 pub fn percentile(values: &Vec<f32>, percentile: usize) -> f32 {
+    println!("Values: {:?}", values);
     assert!(!values.is_empty(), "Values cannot be empty");
     assert!(percentile <= 100, "Percentile must be between 0 and 100");
 
@@ -64,17 +65,6 @@ pub async fn extract_text_from_file(
                 .extract_text_from_docx(path_clone)
                 .expect("Could not extract text from DOCX file");
         }
-        FileType::CSV => return {
-            let path_clone = path.clone();
-            _ = chunker.extract_text_from_csv(
-                path_clone,
-                datasource_id,
-                queue,
-                qdrant_conn,
-                mongo_conn,
-            );
-            None
-        },
         FileType::UNKNOWN => return None,
     }
     // Once we have extracted the text from the file we no longer need the file and there file we delete from disk

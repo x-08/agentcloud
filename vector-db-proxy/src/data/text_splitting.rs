@@ -29,16 +29,17 @@ impl Default for Sentence {
 fn calculate_cosine_distances(sentences: &mut Vec<Sentence>) -> Vec<f32> {
     let mut distances = Vec::new();
     println!("Sentence Length: {}", sentences.len());
-    if sentences.len() > 0 {
+    let mut distance = 1.0;
+    if sentences.len() > 1 {
         for i in 0..sentences.len() - 1 {
             let embedding_current = &sentences[i].sentence_embedding;
             let embedding_next = &sentences[i + 1].sentence_embedding;
-
+            println!("Embedding  next: {}", embedding_next);
             // Calculate cosine similarity
             let similarity = cosine_similarity(embedding_current, embedding_next);
-
+            println!("Similarity Score: {}", similarity);
             // Convert to cosine distance
-            let distance = 1.0 - similarity;
+            distance = 1.0 - similarity;
 
             // Append cosine distance to the list
             distances.push(distance);
@@ -49,6 +50,8 @@ fn calculate_cosine_distances(sentences: &mut Vec<Sentence>) -> Vec<f32> {
 
         // Optionally handle the last sentence
         sentences.last_mut().unwrap().distance_to_next = None; // or a default value
+    } else {
+        distances.push(distance)
     }
     distances
 }
@@ -128,6 +131,7 @@ impl Chunker {
                 .await
             {
                 Ok(embeddings) => {
+                    println!("Embedding: {:?}", embeddings);
                     // we match the index with the embedding index and insert the embedding vector into the sentence hashmap
                     for (i, sentence) in sentences.iter().enumerate() {
                         if !embeddings.is_empty() && embeddings.len() > 0 {
@@ -142,11 +146,16 @@ impl Chunker {
                             println!("Embedding is empty!")
                         }
                     }
+                    println!("Vector of sentences: {}", vector_of_sentences.len());
                     // here is where the divergence occurs depending on the chunking strategy chosen by the use
                     match &self.chunking_strategy.as_ref().unwrap() {
                         ChunkingStrategy::SEMANTIC_CHUNKING => {
                             // in the semantic chunking we iterate through each of the sentences and calculate their relative cosine similarity scores
                             let distances = calculate_cosine_distances(&mut vector_of_sentences);
+                            println!("Distances: {:?}", distances);
+                            if distances.is_empty() {
+                                println!("Distances came back empty!");
+                            }
                             let breakpoint_percentile_threshold = 95;
                             let breakpoint_distance_threshold =
                                 percentile(&distances, breakpoint_percentile_threshold);

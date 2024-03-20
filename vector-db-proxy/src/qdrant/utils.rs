@@ -330,6 +330,7 @@ impl Qdrant {
                     must,
                     must_not,
                     should,
+                    min_should: None,
                 }),
                 limit: limit.unwrap_or(5),
                 with_payload: Some(true.into()),
@@ -380,6 +381,7 @@ impl Qdrant {
                 must,
                 must_not,
                 should,
+                min_should: None,
             }),
             score_threshold: Some(0.9),
             ..Default::default()

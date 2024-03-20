@@ -22,9 +22,7 @@ pub async fn process_messages(
     let redis_connection = RedisConnection::new(None).await.unwrap();
     match serde_json::from_str(message.as_str()) {
         Ok::<Value, _>(message_data) => {
-            match get_embedding_model_and_embedding_key(&mongodb_connection, datasource_id.as_str())
-                .await
-            {
+            match get_embedding_model_and_embedding_key(&mongodb_connection, datasource_id.as_str()).await {
                 Ok((model_parameter_result, embedding_field)) => match model_parameter_result {
                     Some(model_parameters) => {
                         let vector_length = model_parameters.embeddingLength as u64;
@@ -65,6 +63,7 @@ pub async fn process_messages(
                                 }
                             }
                         } else {
+                            eprintln!("Could not convert message to object!");
                             return false;
                         }
                     }
@@ -78,6 +77,7 @@ pub async fn process_messages(
                     return false;
                 }
             }
+            println!("Unknown error occurred while retrieving from db!");
             false
         }
         Err(e) => {

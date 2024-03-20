@@ -42,7 +42,6 @@ impl Hash for Document {
 pub enum FileType {
     PDF,
     TXT,
-    CSV,
     DOCX,
     UNKNOWN,
 }
@@ -52,7 +51,6 @@ impl From<String> for FileType {
         match value.as_str() {
             "pdf" => Self::PDF,
             "txt" => Self::TXT,
-            "csv" => Self::CSV,
             "docx" | "pptx" | "xlsx" | "odt" | "ods" | "odp" => Self::DOCX,
             _ => Self::UNKNOWN,
         }
@@ -62,7 +60,6 @@ impl From<String> for FileType {
 impl Display for FileType {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
-            FileType::CSV => write!(f, "{}", "csv"),
             FileType::DOCX => write!(f, "{}", "docx"),
             FileType::PDF => write!(f, "{}", "pdf"),
             FileType::TXT => write!(f, "{}", "txt"),
