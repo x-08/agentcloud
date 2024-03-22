@@ -31,7 +31,7 @@ use tokio::join;
 use tokio::signal::unix::{signal, SignalKind};
 #[cfg(windows)]
 use tokio::signal::windows::ctrl_c;
-use tokio::sync::RwLock;
+use tokio::sync::{Mutex, RwLock};
 
 use crate::init::env_variables::set_all_env_vars;
 use crate::rabbitmq::consume::subscribe_to_queue;
@@ -43,6 +43,7 @@ use routes::api_routes::{
 use crate::mongo::client::start_mongo_connection;
 use crate::queue::queuing::{Control, MyQueue};
 use crate::rabbitmq::client::{bind_queue_to_exchange, channel_rabbitmq, connect_rabbitmq};
+use crate::redis_rs::client::RedisConnection;
 
 pub fn init(config: &mut web::ServiceConfig) {
     let webapp_url =
@@ -88,6 +89,7 @@ async fn main() -> std::io::Result<()> {
     let qdrant_connection_for_rabbitmq = Arc::clone(&app_qdrant_client);
     let queue: Arc<RwLock<MyQueue<String>>> = Arc::new(RwLock::new(Control::default()));
     let mongo_client_clone = Arc::new(RwLock::new(mongo_connection));
+    let redis_connection_pool: Arc<Mutex<RedisConnection>> = Arc::new(Mutex::new(RedisConnection::new(Some(100)).await.unwrap()));
     let rabbitmq_connection_details = RabbitConnect {
         host: global_data.rabbitmq_host.clone(),
         port: global_data.rabbitmq_port.clone(),
@@ -110,6 +112,7 @@ async fn main() -> std::io::Result<()> {
             Arc::clone(&qdrant_connection_for_rabbitmq),
             Arc::clone(&queue),
             Arc::clone(&mongo_client_clone),
+            Arc::clone(&redis_connection_pool),
             &channel,
             &global_data.rabbitmq_stream,
         )

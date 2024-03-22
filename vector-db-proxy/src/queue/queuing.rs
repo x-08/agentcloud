@@ -4,7 +4,8 @@ use std::fmt::Debug;
 use std::marker::Send;
 use std::sync::Arc;
 use std::thread::available_parallelism;
-use tokio::sync::RwLock;
+use tokio::sync::{Mutex, RwLock};
+use crate::redis_rs::client::RedisConnection;
 
 use queues::Queue;
 use queues::*;
@@ -23,8 +24,8 @@ pub struct MyQueue<T: Clone> {
 
 // This list all the methods that are available in this class
 pub trait Control<T>
-where
-    T: Debug,
+    where
+        T: Debug,
 {
     fn new(pool_size: usize) -> Self;
     fn default() -> Self;
@@ -33,6 +34,7 @@ where
         &mut self,
         qdrant_conn: Arc<RwLock<QdrantClient>>,
         mongo_conn: Arc<RwLock<Database>>,
+        redis_conn_pool: Arc<Mutex<RedisConnection>>,
         message: String,
     ) -> bool;
 }
@@ -41,9 +43,9 @@ where
 // This implementation is generic for all types that are both Send and Clone
 // T must be Send in order to be sent safely across threads
 impl<T: Clone + Send> Control<T> for MyQueue<T>
-where
-    T: Debug,
-    String: From<T>,
+    where
+        T: Debug,
+        String: From<T>,
 {
     // This is similar to the __init__ method in python. That instantiates an instance of the class
     fn new(pool_size: usize) -> Self {
@@ -85,6 +87,7 @@ where
         &mut self,
         qdrant_conn: Arc<RwLock<QdrantClient>>,
         mongo_conn: Arc<RwLock<Database>>,
+        redis_conn_pool: Arc<Mutex<RedisConnection>>,
         message: String,
     ) -> bool {
         println!("Received table embedding task...");
@@ -101,10 +104,11 @@ where
             let data = message.clone();
             let qdrant_client = Arc::clone(&qdrant_conn);
             let mongo_client = Arc::clone(&mongo_conn);
+            let redis_conn = Arc::clone(&redis_conn_pool);
             self.pool.execute(move || {
                 let rt = tokio::runtime::Runtime::new().unwrap();
                 rt.block_on(async {
-                    let _ = process_messages(qdrant_client, mongo_client, data, id).await;
+                    let _ = process_messages(qdrant_client, mongo_client, redis_conn, data, id).await;
                 })
             });
         }
