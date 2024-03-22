@@ -1,14 +1,15 @@
+import * as API from '@api';
 import { Menu, Transition } from '@headlessui/react';
 import {
 	ChevronDownIcon,
 	HomeIcon,
 } from '@heroicons/react/20/solid';
 import CreateTeamModal from 'components/CreateTeamModal';
+import SubscriptionModal from 'components/SubscriptionModal';
+import { useAccountContext } from 'context/account';
 import { useRouter } from 'next/router';
 import { Fragment, useState } from 'react';
-
-import * as API from '../api';
-import { useAccountContext } from '../context/account';
+import { SubscriptionPlan } from 'struct/billing';
 
 function classNames(...classes) {
 	return classes.filter(Boolean).join(' ');
@@ -18,12 +19,13 @@ export default function OrgSelector({ orgs }) {
 
 	const [accountContext, refreshAccountContext, setSwitchingContext]: any = useAccountContext();
 	const { account, csrf } = accountContext as any;
+	const { stripePlan } = account?.stripe || {};
 	const router = useRouter();
 	const resourceSlug = router?.query?.resourceSlug || account?.currentTeam;
 	const teamName = orgs?.find(o => o.teams.find(t => t.id === resourceSlug))?.name;
 	const [_state, dispatch] = useState();
 	const [_error, setError] = useState();
-	const [modalOpen, setModalOpen] = useState(false);
+	const [modalOpen, setModalOpen]: any = useState(false);
 
 	async function switchTeam(orgId, teamId) {
 		const splitLocation = location.pathname.split('/').filter(n => n);
@@ -124,7 +126,10 @@ export default function OrgSelector({ orgs }) {
 							</span>))}
 						<hr className='border-t border-2 border-slate-700 w-full' />
 						<a
-							onClick={() => setModalOpen(true)}
+							onClick={() => {
+								const planAllowed = [SubscriptionPlan.Free, SubscriptionPlan.Pro].includes(stripePlan);
+								setModalOpen(!planAllowed ? 'subscribe' : 'team');
+							}}
 							href='#'
 							className='text-gray-100 group flex items-center px-3 py-2 text-sm group-hover:text-gray-700 hover:bg-slate-700 hover:text-white'
 						>
@@ -134,6 +139,7 @@ export default function OrgSelector({ orgs }) {
 				</Menu.Items>
 			</Transition>
 		</Menu>
-		<CreateTeamModal open={modalOpen} setOpen={setModalOpen} callback={callback} />
+		<SubscriptionModal open={modalOpen === 'subscribe'} setOpen={setModalOpen} title='Upgrade Required' text='To create additional teams, upgrade to the teams plan.' buttonText='Upgrade' />
+		<CreateTeamModal open={modalOpen === 'team'} setOpen={setModalOpen} callback={callback} />
 	</>);
 }

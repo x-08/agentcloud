@@ -1,15 +1,15 @@
 'use strict';
 
+import { dynamicResponse } from '@dr';
 import getAirbyteApi, { AirbyteApiType } from 'airbyte/api';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import createAccount from 'lib/account/create';
 import { ObjectId } from 'mongodb';
 
-import { Account, changeAccountPassword, getAccountByEmail, getAccountById, setCurrentTeam, verifyAccount } from '../db/account';
+import { Account, changeAccountPassword, getAccountByEmail, getAccountById, setCurrentTeam, setPlanDebug, verifyAccount } from '../db/account';
 import { addVerification, getAndDeleteVerification,VerificationTypes } from '../db/verification';
 import * as ses from '../lib/email/ses';
-import { dynamicResponse } from '../util';
 
 export async function accountData(req, res, _next) {
 	//TODO: calculate and send the base64 of calcuated permissions for the resourceSlug here:
@@ -237,5 +237,15 @@ export async function dockerLogsJson(req, res, next) {
 // 	// Flatten, sort by timestamp, and then join back into a single string
 // 	const sortedLogs = logsArrays.flat().sort().join('\n');
 // 	return res.json({ logs: sortedLogs });
+
+}
+
+export async function setPlanDebugApi(req, res, next) {
+
+	const { plan } = req.body;
+
+	setPlanDebug(res.locals.account._id, plan);
+
+	return res.json({});
 
 }
